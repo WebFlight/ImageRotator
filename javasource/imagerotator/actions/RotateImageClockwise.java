@@ -14,14 +14,19 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.NoSuchElementException;
 import javax.imageio.ImageIO;
 import com.mendix.core.Core;
 import com.mendix.systemwideinterfaces.core.IContext;
 import com.mendix.webui.CustomJavaAction;
+
+import system.proxies.FileDocument;
+
 import com.mendix.systemwideinterfaces.core.IMendixObject;
 
-public class RotateImageClockwise extends CustomJavaAction<IMendixObject>
+public class RotateImageClockwise extends CustomJavaAction<java.lang.Boolean>
 {
 	private IMendixObject __inputImage;
 	private system.proxies.Image inputImage;
@@ -33,11 +38,32 @@ public class RotateImageClockwise extends CustomJavaAction<IMendixObject>
 	}
 
 	@java.lang.Override
-	public IMendixObject executeAction() throws Exception
+	public java.lang.Boolean executeAction() throws Exception
 	{
 		this.inputImage = __inputImage == null ? null : system.proxies.Image.initialize(getContext(), __inputImage);
 
 		// BEGIN USER CODE
+
+		FileDocument file = null;
+		String filename = file.getName();
+		String extension = filename.substring(filename.lastIndexOf(".") + 1, filename.length());
+
+		String jpg = "jpg";
+		String jpeg = "jpeg";
+		if (!extension.equals(jpg) && !extension.contentEquals(jpeg)) {
+			Core.getLogger("ImageRotator").error("The file must be a jpg or jpeg file.");
+		}
+		else {
+		
+		if (__inputImage == null) {
+			throw new NullPointerException("No image provided.");
+		} 
+		else if (inputImage.getHasContents() != true) {
+			Core.getLogger("ImageRotator").error("The input image has no contents.");
+			return false;
+		} 
+		else {
+		
 		IContext context = this.getContext();
 
 		BufferedImage image = null;
@@ -46,22 +72,28 @@ public class RotateImageClockwise extends CustomJavaAction<IMendixObject>
 		ByteArrayOutputStream outputStream = null;
 
 		try {
-			
+
 			image = ImageIO.read(Core.getImage(context, __inputImage, false));
-			
+
 			rotatedImage = rotate(image);
 			outputStream = new ByteArrayOutputStream();
 			ImageIO.write(rotatedImage, "jpeg", outputStream);
 			inputStream = new ByteArrayInputStream(outputStream.toByteArray());
 			Core.storeImageDocumentContent(context, __inputImage, inputStream, 100, 100);
-			return __inputImage;
-		}
+			return true;
 
-		finally {
+		} catch (NullPointerException e) {
+			Core.getLogger("ImageRotator").error(e.getMessage(), e);
+			return false;
+		} catch (Exception e) {
+			Core.getLogger("ImageRotator").error(e.getMessage(), e);
+			return false;
+		} finally {
 			inputStream.close();
 			outputStream.close();
-			
-		}
+		}}}
+		return true;
+
 		// END USER CODE
 	}
 
@@ -75,8 +107,8 @@ public class RotateImageClockwise extends CustomJavaAction<IMendixObject>
 	}
 
 	// BEGIN EXTRA CODE
-	private static final BufferedImage rotate(BufferedImage image) {
-		
+	private final BufferedImage rotate(BufferedImage image) {
+
 		final double rads = Math.toRadians(90);
 		final double sin = Math.abs(Math.sin(rads));
 		final double cos = Math.abs(Math.cos(rads));
@@ -85,10 +117,10 @@ public class RotateImageClockwise extends CustomJavaAction<IMendixObject>
 		final BufferedImage rotatedImage = new BufferedImage(w, h, image.getType());
 		final AffineTransform at = new AffineTransform();
 		at.translate(w / 2, h / 2);
-		at.rotate(rads,0, 0);
+		at.rotate(rads, 0, 0);
 		at.translate(-image.getWidth() / 2, -image.getHeight() / 2);
 		final AffineTransformOp rotateOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-		rotateOp.filter(image,rotatedImage);
+		rotateOp.filter(image, rotatedImage);
 		return rotatedImage;
 	}
 	// END EXTRA CODE
