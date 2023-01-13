@@ -5,6 +5,9 @@ Two flows are already made and ready to use. They can simply be put behind anyth
 The module only works for JPG or JPEG files.
 The maximum file size of the image which is to be rotated can be managed by altering the value of the maximum file size constant.
 
+Updated to Mx version 8.12.5 for Mx 9 compatibility
+
+
 ## Demo
 Check the demo application at https://imagerotator-sandbox.mxapps.io/. Uploaded images will be deleted automatically after use.
 
